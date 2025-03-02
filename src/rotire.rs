@@ -7,6 +7,7 @@ pub enum RotireMode {
     Delete,
 }
 
+#[derive(Debug)]
 pub struct Rotire {
     /// Is a flag indicating if rotire executes an operation.
     is_running: AtomicBool,
