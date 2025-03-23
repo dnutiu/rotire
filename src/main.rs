@@ -2,6 +2,7 @@ mod rotire;
 
 use clap::Parser;
 use env_logger;
+use log::{error, info};
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -20,6 +21,10 @@ fn main() {
     env_logger::init();
     let args = Args::parse();
     let rotire = rotire::Rotire::new(args.directory);
-
     let result = rotire.run(args.keep_n);
+    if let Ok(result) = result {
+        info!("Rotire ran successfully: {result}.")
+    } else {
+        error!("Rotire failed: {result:?}.")
+    }
 }
