@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::Metadata;
+use std::os::linux::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -19,17 +20,46 @@ pub struct Rotire {
 }
 
 #[derive(Debug)]
+/// RotireFile is a special file used within rotire that contains a path and a metadata.
 pub struct RotireFile {
     pub path: PathBuf,
     pub metadata: Metadata,
 }
 
 #[derive(Debug)]
-pub struct RotireResult {}
+pub struct RotireResult {
+    /// affected_files represents the number of affected files
+    pub affected_files: i32,
+    pub affected_files_size: u64,
+}
+
+impl RotireResult {
+    fn new() -> Self {
+        RotireResult {
+            affected_files: 0,
+            affected_files_size: 0,
+        }
+    }
+
+    /// Increments the affected files counter.
+    fn inc_affected_files(&mut self) {
+        self.affected_files += 1
+    }
+
+    /// Increments the affected files size.
+    fn inc_affected_files_size(&mut self, size: u64) {
+        self.affected_files_size += size
+    }
+}
 
 impl Display for RotireResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "All good.")
+        let size_in_mib = self.affected_files_size / (1024 * 1024);
+        write!(
+            f,
+            "Affected files {}, containing {} MiB.",
+            self.affected_files, size_in_mib
+        )
     }
 }
 
@@ -67,16 +97,31 @@ impl Rotire {
         }
         self.is_running.store(true, Ordering::Relaxed);
 
-        let files: Vec<RotireFile> = self.list_files_in_directory(&self.directory)?;
+        let mut files: Vec<RotireFile> = self.list_files_in_directory(&self.directory)?;
 
-        for file in files {
-            println!("File {:?}", file)
+        // Sort files by modified time
+        files.sort_unstable_by(|a, b| {
+            let this_modified = a.metadata.modified();
+            let other_modified = b.metadata.modified();
+            if this_modified.is_ok() && other_modified.is_ok() {
+                return this_modified.unwrap().cmp(&other_modified.unwrap());
+            } else if this_modified.is_err() && other_modified.is_err() {
+                return std::cmp::Ordering::Less;
+            };
+            std::cmp::Ordering::Less
+        });
+
+        // Execute action and record result
+        let mut result = RotireResult::new();
+        for file in files.iter().rev().skip(keep_max_files as usize) {
+            result.inc_affected_files_size(file.metadata.st_size());
+            result.inc_affected_files();
+
+            // do action
+            fs::remove_file(file.path.clone())?;
         }
 
-        // TODO: sort my mtime
-        // TODO: delete the rest of files
-
         self.is_running.store(false, Ordering::Relaxed);
-        Ok(RotireResult {})
+        Ok(result)
     }
 }

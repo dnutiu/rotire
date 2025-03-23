@@ -12,8 +12,8 @@ struct Args {
     #[arg(short('d'), long)]
     directory: String,
 
-    /// How many items to keep, defaults to 2.
-    #[arg(short('k'), long, default_value_t = 2)]
+    /// How many items to keep, defaults to 4.
+    #[arg(short('k'), long, default_value_t = 4)]
     keep_n: i32,
 }
 
