@@ -100,16 +100,14 @@ impl Rotire {
         let mut files: Vec<RotireFile> = self.list_files_in_directory(&self.directory)?;
 
         // Sort files by modified time
-        files.sort_unstable_by(|a, b| {
-            let this_modified = a.metadata.modified();
-            let other_modified = b.metadata.modified();
-            if this_modified.is_ok() && other_modified.is_ok() {
-                return this_modified.unwrap().cmp(&other_modified.unwrap());
-            } else if this_modified.is_err() && other_modified.is_err() {
-                return std::cmp::Ordering::Less;
-            };
-            std::cmp::Ordering::Less
-        });
+        files.sort_unstable_by(
+            |a, b| match (a.metadata.modified(), b.metadata.modified()) {
+                (Ok(a_time), Ok(b_time)) => a_time.cmp(&b_time),
+                (Ok(_), Err(_)) => std::cmp::Ordering::Less,
+                (Err(_), Ok(_)) => std::cmp::Ordering::Less,
+                (Err(_), Err(_)) => std::cmp::Ordering::Less,
+            },
+        );
 
         // Execute action and record result
         let mut result = RotireResult::new();
