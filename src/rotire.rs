@@ -1,4 +1,7 @@
 use anyhow::{anyhow, Result};
+use flate2::write::GzEncoder;
+use flate2::Compression;
+use log::error;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::fs::{File, Metadata};
@@ -6,16 +9,13 @@ use std::os::linux::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use flate2::Compression;
-use flate2::write::GzEncoder;
-use log::error;
 
 /// RotireAction is the action that rotire will perform on run.
 pub enum RotireAction {
     /// Delete mode deletes files.
     Delete,
     /// Archive files and delete older ones.
-    ArchiveAndDelete
+    ArchiveAndDelete,
 }
 
 #[derive(Debug)]
@@ -24,6 +24,7 @@ pub struct Rotire {
     is_running: AtomicBool,
     /// The directory on which rotire operates on
     directory: PathBuf,
+    filters: Vec<RotireFilter>,
 }
 
 #[derive(Debug)]
@@ -38,6 +39,34 @@ pub struct RotireResult {
     /// affected_files represents the number of affected files
     pub affected_files: i32,
     pub affected_files_size: u64,
+}
+
+/// Filters filter file names based on some rules.
+#[derive(Debug)]
+pub enum RotireFilter {
+    Prefix { value: String },
+    Suffix { value: String },
+}
+
+impl RotireFilter {
+    pub fn satisfies(&self, file: &RotireFile) -> bool {
+        match self {
+            RotireFilter::Prefix { value } => file
+                .path
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with(value),
+            RotireFilter::Suffix { value } => file
+                .path
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .ends_with(value),
+        }
+    }
 }
 
 impl RotireResult {
@@ -75,7 +104,13 @@ impl Rotire {
         Rotire {
             is_running: AtomicBool::new(false),
             directory: directory.as_ref().to_path_buf(),
+            filters: Vec::default(),
         }
+    }
+
+    /// Adds a rotire filter to this instance.
+    pub fn add_filter(&mut self, filter: RotireFilter) {
+        self.filters.push(filter);
     }
 
     /// Lists the files in the given directory and returns a vector of file metadata.
@@ -91,12 +126,22 @@ impl Rotire {
                     None
                 }
             })
+            .filter(|file| {
+                if self.filters.is_empty() {
+                    return true;
+                }
+                return self.filters.iter().all(|x| x.satisfies(file));
+            })
             .collect();
 
         Ok(files)
     }
 
-    fn execute_action(&self, files: Vec<&RotireFile>, action: RotireAction) -> Result<RotireResult> {
+    fn execute_action(
+        &self,
+        files: Vec<&RotireFile>,
+        action: RotireAction,
+    ) -> Result<RotireResult> {
         let mut result = RotireResult::new();
         match action {
             RotireAction::Delete => {
@@ -130,7 +175,9 @@ impl Rotire {
                     let file_result = File::open(file_path);
                     match file_result {
                         Ok(mut file_handle) => {
-                            if let Err(result) = tar.append_file(file_path.file_name().unwrap(), &mut file_handle) {
+                            if let Err(result) =
+                                tar.append_file(file_path.file_name().unwrap(), &mut file_handle)
+                            {
                                 error!("failed to archive file {0:?}: {1}", file_path, result)
                             } else {
                                 if let Err(result) = fs::remove_file(file_path) {
@@ -142,11 +189,8 @@ impl Rotire {
                             error!("failed to open file {0:?}: {1}", file_path, err)
                         }
                     }
-
-
                 });
                 tar.finish()?;
-
             }
         }
         Ok(result)
@@ -173,7 +217,10 @@ impl Rotire {
         );
 
         // Execute action and record result
-        let result = self.execute_action(files.iter().rev().skip(keep_max_files as usize).collect(), action)?;
+        let result = self.execute_action(
+            files.iter().rev().skip(keep_max_files as usize).collect(),
+            action,
+        )?;
 
         self.is_running.store(false, Ordering::Relaxed);
         Ok(result)

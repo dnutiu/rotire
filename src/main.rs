@@ -1,9 +1,9 @@
 mod rotire;
 
+use crate::rotire::{RotireAction, RotireFilter};
 use clap::Parser;
 use env_logger;
 use log::{error, info};
-use crate::rotire::RotireAction;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -17,24 +17,40 @@ struct Args {
     #[arg(short('k'), long, default_value_t = 4)]
     keep_n: i32,
 
+    /// The action to perform when running rotire.
     #[arg(
         default_value = "archive-delete",
         value_parser = ["archive-delete", "delete"],
         help = "Select the action rotire should run."
     )]
-    action: String
+    action: String,
+
+    /// Only apply action on the file names matching the prefix.
+    #[arg(short('p'), long, default_value = None)]
+    prefix_filter: Option<String>,
+
+    /// Only apply action on the file names matching the suffix.
+    #[arg(short('s'), long, default_value = None)]
+    suffix_filter: Option<String>,
 }
 
 fn main() {
     env_logger::init();
     let args = Args::parse();
-    let rotire = rotire::Rotire::new(args.directory);
+    let mut rotire = rotire::Rotire::new(args.directory);
+
+    // Prepare action
     let mut action: RotireAction = RotireAction::ArchiveAndDelete;
     match args.action.as_str() {
-        "delete" => {
-            action = RotireAction::Delete
-        }
+        "delete" => action = RotireAction::Delete,
         _ => {}
+    }
+    // Prepare filters
+    if let Some(filter) = args.prefix_filter {
+        rotire.add_filter(RotireFilter::Prefix { value: filter })
+    }
+    if let Some(filter) = args.suffix_filter {
+        rotire.add_filter(RotireFilter::Suffix { value: filter })
     }
 
     let result = rotire.run(args.keep_n, action);
