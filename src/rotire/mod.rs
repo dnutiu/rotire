@@ -1,14 +1,18 @@
+pub mod filter;
+mod model;
+
 use anyhow::{anyhow, Result};
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use log::error;
-use std::fmt::{Display, Formatter};
 use std::fs;
-use std::fs::{File, Metadata};
+use std::fs::{File};
 use std::os::linux::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::rotire::filter::RotireFilter;
+use crate::rotire::model::{RotireFile, RotireResult};
 
 /// RotireAction is the action that rotire will perform on run.
 pub enum RotireAction {
@@ -25,78 +29,6 @@ pub struct Rotire {
     /// The directory on which rotire operates on
     directory: PathBuf,
     filters: Vec<RotireFilter>,
-}
-
-#[derive(Debug)]
-/// RotireFile is a special file used within rotire that contains a path and a metadata.
-pub struct RotireFile {
-    pub path: PathBuf,
-    pub metadata: Metadata,
-}
-
-#[derive(Debug)]
-pub struct RotireResult {
-    /// affected_files represents the number of affected files
-    pub affected_files: i32,
-    pub affected_files_size: u64,
-}
-
-/// Filters filter file names based on some rules.
-#[derive(Debug)]
-pub enum RotireFilter {
-    Prefix { value: String },
-    Suffix { value: String },
-}
-
-impl RotireFilter {
-    pub fn satisfies(&self, file: &RotireFile) -> bool {
-        match self {
-            RotireFilter::Prefix { value } => file
-                .path
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .starts_with(value),
-            RotireFilter::Suffix { value } => file
-                .path
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .ends_with(value),
-        }
-    }
-}
-
-impl RotireResult {
-    fn new() -> Self {
-        RotireResult {
-            affected_files: 0,
-            affected_files_size: 0,
-        }
-    }
-
-    /// Increments the affected files counter.
-    fn inc_affected_files(&mut self) {
-        self.affected_files += 1
-    }
-
-    /// Increments the affected files size.
-    fn inc_affected_files_size(&mut self, size: u64) {
-        self.affected_files_size += size
-    }
-}
-
-impl Display for RotireResult {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let size_in_mib = self.affected_files_size / (1024 * 1024);
-        write!(
-            f,
-            "Affected files {}, containing {} MiB.",
-            self.affected_files, size_in_mib
-        )
-    }
 }
 
 impl Rotire {

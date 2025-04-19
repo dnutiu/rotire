@@ -1,9 +1,11 @@
+
 mod rotire;
 
-use crate::rotire::{RotireAction, RotireFilter};
+use crate::rotire::RotireAction;
 use clap::Parser;
 use env_logger;
 use log::{error, info};
+use self::rotire::filter::RotireFilter;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
