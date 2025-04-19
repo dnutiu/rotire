@@ -15,7 +15,7 @@ pub enum RotireAction {
     /// Delete mode deletes files.
     Delete,
     /// Archive files and delete older ones.
-    ArchiveAndDelete,
+    Archive,
 }
 
 #[derive(Debug)]
@@ -155,7 +155,7 @@ impl Rotire {
                     }
                 }
             }
-            RotireAction::ArchiveAndDelete => {
+            RotireAction::Archive => {
                 let timestamp = SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .expect("Time went backwards")

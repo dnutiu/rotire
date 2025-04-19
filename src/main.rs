@@ -19,8 +19,8 @@ struct Args {
 
     /// The action to perform when running rotire.
     #[arg(
-        default_value = "archive-delete",
-        value_parser = ["archive-delete", "delete"],
+        default_value = "archive",
+        value_parser = ["archive", "delete"],
         help = "Select the action rotire should run."
     )]
     action: String,
@@ -40,7 +40,7 @@ fn main() {
     let mut rotire = rotire::Rotire::new(args.directory);
 
     // Prepare action
-    let mut action: RotireAction = RotireAction::ArchiveAndDelete;
+    let mut action: RotireAction = RotireAction::Archive;
     match args.action.as_str() {
         "delete" => action = RotireAction::Delete,
         _ => {}
