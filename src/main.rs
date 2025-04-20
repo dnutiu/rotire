@@ -7,7 +7,7 @@ use env_logger;
 use log::{error, info};
 use self::rotire::filter::RotireFilter;
 
-/// Simple program to greet a person
+/// Simple program to rotate files.
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
