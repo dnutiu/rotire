@@ -57,8 +57,8 @@ fn main() {
 
     let result = rotire.run(args.keep_n, action);
     if let Ok(result) = result {
-        info!("Rotire ran successfully: {result}.")
+        info!("Operation completed successfully: {result}")
     } else {
-        error!("Rotire failed: {result:?}.")
+        error!("Operation failed: {result:?}")
     }
 }
