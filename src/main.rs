@@ -1,7 +1,8 @@
 
 mod rotire;
 
-use crate::rotire::RotireAction;
+use crate::rotire::Action;
+use crate::rotire::ActionType;
 use clap::Parser;
 use env_logger;
 use log::{error, info};
@@ -34,6 +35,10 @@ struct Args {
     /// Only apply action on the file names matching the suffix.
     #[arg(short('s'), long, default_value = None)]
     suffix_filter: Option<String>,
+
+    /// Run the command in dry-run mode.
+    #[arg(long, default_value_t = false)]
+    dry_run: bool,
 }
 
 fn main() {
@@ -42,11 +47,16 @@ fn main() {
     let mut rotire = rotire::Rotire::new(args.directory);
 
     // Prepare action
-    let mut action: RotireAction = RotireAction::Archive;
+    let mut action_type: ActionType = ActionType::Archive;
     match args.action.as_str() {
-        "delete" => action = RotireAction::Delete,
+        "delete" => action_type = ActionType::Delete,
         _ => {}
     }
+    let action = Action {
+        action_type,
+        dry_run: args.dry_run,
+    };
+
     // Prepare filters
     if let Some(filter) = args.prefix_filter {
         rotire.add_filter(RotireFilter::Prefix { value: filter })
