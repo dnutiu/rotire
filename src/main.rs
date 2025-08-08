@@ -1,8 +1,8 @@
 mod rotire;
 
 use self::rotire::filter::RotireFilter;
-use crate::rotire::Action;
-use crate::rotire::ActionType;
+use crate::rotire::actions::Action;
+use crate::rotire::actions::ActionType;
 use clap::Parser;
 use env_logger;
 use log::{error, info};
@@ -51,10 +51,7 @@ fn main() {
         "delete" => action_type = ActionType::Delete,
         _ => {}
     }
-    let action = Action {
-        action_type,
-        dry_run: args.dry_run,
-    };
+    let action = Action::new(action_type, args.dry_run);
 
     // Prepare filters
     if let Some(filter) = args.prefix_filter {
