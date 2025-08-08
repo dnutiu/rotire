@@ -1,12 +1,11 @@
-
 mod rotire;
 
+use self::rotire::filter::RotireFilter;
 use crate::rotire::Action;
 use crate::rotire::ActionType;
 use clap::Parser;
 use env_logger;
 use log::{error, info};
-use self::rotire::filter::RotireFilter;
 
 /// Simple program to rotate files.
 #[derive(Parser, Debug)]

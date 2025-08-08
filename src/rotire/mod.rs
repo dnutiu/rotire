@@ -1,18 +1,18 @@
 pub mod filter;
 mod model;
 
+use crate::rotire::filter::RotireFilter;
+use crate::rotire::model::{RotireFile, RotireResult};
 use anyhow::{anyhow, Result};
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use log::{error, info};
 use std::fs;
-use std::fs::{File};
+use std::fs::File;
 use std::os::linux::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::rotire::filter::RotireFilter;
-use crate::rotire::model::{RotireFile, RotireResult};
 
 /// ActionType is the type of action that rotire will perform on run.
 pub enum ActionType {
@@ -143,11 +143,7 @@ impl Rotire {
         Ok(result)
     }
 
-    fn execute_action(
-        &self,
-        files: Vec<&RotireFile>,
-        action: &Action,
-    ) -> Result<RotireResult> {
+    fn execute_action(&self, files: Vec<&RotireFile>, action: &Action) -> Result<RotireResult> {
         match action.action_type {
             ActionType::Delete => self.delete_files(files, action),
             ActionType::Archive => self.archive_files(files, action),

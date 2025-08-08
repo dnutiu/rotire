@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use std::fs::Metadata;
 use std::fmt::{Display, Formatter};
+use std::fs::Metadata;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 /// RotireFile is a special file used within rotire that contains a path and a metadata.
