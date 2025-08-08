@@ -49,7 +49,12 @@ fn test_rotire_archive_action() {
 
     let found_files: Vec<_> = remaining_files
         .iter()
-        .map(|p| p.file_name().unwrap_or_default().to_string_lossy().into_owned())
+        .map(|p| {
+            p.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned()
+        })
         .filter(|p| !p.ends_with(".tar.gz"))
         .collect();
 
@@ -96,7 +101,12 @@ fn test_rotire_delete_action() {
 
     let found_files: Vec<_> = remaining_files
         .iter()
-        .map(|p| p.file_name().unwrap_or_default().to_string_lossy().into_owned())
+        .map(|p| {
+            p.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned()
+        })
         .collect();
 
     assert_eq!(found_files, vec!["file9", "file8", "file7", "file6"]);
@@ -142,8 +152,19 @@ fn test_rotire_delete_action_dry_run() {
 
     let found_files: Vec<_> = remaining_files
         .iter()
-        .map(|p| p.file_name().unwrap_or_default().to_string_lossy().into_owned())
+        .map(|p| {
+            p.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned()
+        })
         .collect();
 
-    assert_eq!(found_files, vec!["file9", "file8", "file7", "file6", "file5", "file4", "file3", "file2", "file1", "file0"]);
+    assert_eq!(
+        found_files,
+        vec![
+            "file9", "file8", "file7", "file6", "file5", "file4", "file3", "file2", "file1",
+            "file0"
+        ]
+    );
 }
