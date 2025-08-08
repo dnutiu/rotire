@@ -12,6 +12,18 @@ Rotire automatically manages files in a directory by:
 - **Deleting older files** permanently (when using delete action)
 - **Filtering files** by prefix or suffix patterns (optional)
 
+## Installation
+
+You can install the Rotire cli using the following options:
+
+### Cargo
+
+Install rotire with cargo:
+
+```bash
+cargo install --git https://forge.nuculabs.dev/dnutiu/rotire.git
+```
+
 ### Use Cases
 - **Log rotation**: Archive old log files while keeping recent ones accessible
 - **Backup management**: Clean up backup directories by archiving old backups
